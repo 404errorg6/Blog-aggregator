@@ -33,7 +33,7 @@ func Read() (Config, error) {
 
 func write(cfg Config) error {
 	var data []byte
-	pFile, err := getConfigFilePath()
+	pCfg, err := getConfigFilePath()
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func write(cfg Config) error {
 		return err
 	}
 
-	if err := os.WriteFile(pFile, data, 0o644); err != nil {
+	if err := os.WriteFile(pCfg, data, 0o644); err != nil {
 		return err
 	}
 	return nil

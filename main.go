@@ -1,34 +1,40 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
 	"Blog-aggregator/internal/config"
+	"Blog-aggregator/internal/database"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
 	cfg, err := config.Read()
 	if err != nil {
 		fmt.Printf("Error occured while reading config: %v\n", err)
-		return
+		os.Exit(1)
 	}
+
+	db, err := sql.Open("postgres", cfg.DB_URL)
+	dbQueries := database.New(db)
 
 	State := state{
+		db:  dbQueries,
 		cfg: &cfg,
 	}
-	cmds := commands{
-		handler: map[string]func(*state, command) error{
-			"login": handlerLogin,
-		},
-	}
-
-	cmds.register("login", cmds.handler["login"])
+	// Register commands
+	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerUsers)
 
 	// Args login
 	args := os.Args
 	if len(args) < 2 {
-		fmt.Printf("not enought arguments")
+		fmt.Printf("not enought arguments\n")
 		os.Exit(1)
 	}
 
@@ -38,9 +44,7 @@ func main() {
 	}
 
 	if err := cmds.run(&State, userCmd); err != nil {
-		fmt.Printf("Error while running cmd: %v\n", err)
-		return
+		fmt.Printf("%v\n", err)
+		os.Exit(1)
 	}
-
-	fmt.Printf("Config: %+v\n", cfg)
 }
