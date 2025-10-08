@@ -12,6 +12,55 @@ import (
 	"github.com/google/uuid"
 )
 
+func handlerFeeds(s *state, cmd command) error {
+	feeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return err
+	}
+
+	for i, feed := range feeds {
+		user, err := s.db.GetUserByID(context.Background(), feed.UserID)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Feed # %v:\n", i+1)
+		fmt.Printf("	Name:  %v\n", feed.Name)
+		fmt.Printf("	URL:   %v\n", feed.Url)
+		fmt.Printf("	Owner: %v\n", user.Name)
+	}
+	return nil
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.args) < 2 {
+		return fmt.Errorf("\"%v\" requires two arguments\n", cmd.name)
+	}
+
+	currentUserName := s.cfg.UserName
+	user, err := s.db.GetUser(context.Background(), currentUserName)
+	if err != nil {
+		return err
+	}
+
+	params := database.CreateFeedParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      cmd.args[0],
+		Url:       cmd.args[1],
+		UserID:    user.ID,
+	}
+
+	_, err = s.db.CreateFeed(context.Background(), params)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("successfully added to \"%v\": %v\n", currentUserName, cmd.args[1])
+	return nil
+}
+
 func handlerAgg(s *state, cmd command) error {
 	//if len(cmd.args) < 1 {
 	//	return fmt.Errorf("URL is required")
