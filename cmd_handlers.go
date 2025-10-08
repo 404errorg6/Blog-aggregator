@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"html"
 	"time"
 
 	"Blog-aggregator/internal/config"
@@ -10,6 +11,28 @@ import (
 
 	"github.com/google/uuid"
 )
+
+func handlerAgg(s *state, cmd command) error {
+	//if len(cmd.args) < 1 {
+	//	return fmt.Errorf("URL is required")
+	//}
+	url := "https://www.wagslane.dev/index.xml"
+
+	rss, err := fetchFeed(context.Background(), url)
+	if err != nil {
+		return err
+	}
+
+	rss.Channel.Description = html.UnescapeString(rss.Channel.Description)
+	rss.Channel.Title = html.UnescapeString(rss.Channel.Title)
+	for _, item := range rss.Channel.Item { // Pass by val??
+		title, desc := item.Title, item.Description
+		item.Description = html.UnescapeString(desc)
+		item.Title = html.UnescapeString(title)
+	}
+	fmt.Printf("%+v\n", rss)
+	return nil
+}
 
 func handlerUsers(s *state, cmd command) error {
 	currentUser := s.cfg.UserName
