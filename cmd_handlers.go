@@ -22,6 +22,10 @@ func handlerFollowing(s *state, cmd command) error {
 		return err
 	}
 
+	if len(feeds) < 1 {
+		return fmt.Errorf("\"%v\" not following any feed\n", user.Name)
+	}
+
 	fmt.Printf("\"%v\" is following:\n", user.Name)
 	for _, feed := range feeds {
 		fmt.Printf("  - %v\n", feed.FeedName)
@@ -93,6 +97,11 @@ func handlerAddFeed(s *state, cmd command) error {
 	user, err := s.db.GetUser(context.Background(), currentUserName)
 	if err != nil {
 		return err
+	}
+
+	_, err = s.db.GetFeedByURL(context.Background(), cmd.args[1])
+	if err == nil {
+		return fmt.Errorf("url already exist\nUse \"follow\" cmd instead")
 	}
 
 	paramsF := database.CreateFeedParams{
